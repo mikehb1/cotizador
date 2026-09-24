@@ -48,6 +48,7 @@ tbody tr:hover{background:#f7f9fb;}
 .total-cell{font-weight:700;}
 .acciones{display:flex; gap:2px; justify-content:flex-end;}
 .placa-chip{display:inline-block; background:#0b4d8c; color:#fff; font-weight:700; letter-spacing:1px; padding:3px 10px; border-radius:6px; font-size:12.5px;}
+.folio{font-family:Consolas,monospace; font-size:12px; color:#0b4d8c; font-weight:600;}
 /* resumen */
 .resumen-stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; margin-bottom:18px;}
 .stat{background:#fff; border:1px solid var(--borde); border-radius:12px; padding:15px; box-shadow:var(--sombra);}
@@ -245,7 +246,7 @@ tbody tr:hover{background:#f7f9fb;}
     <input type="hidden" id="vehEditId">
     <div class="campo"><label style="font-size:13px; color:var(--azul);">Datos del cliente / dueño</label></div>
     <div id="cliSelBox" class="campo">
-      <label>�registrar a cliente existente o nuevo</label>
+      <label>Registrar a cliente existente o nuevo</label>
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
         <label style="font-size:12.5px; display:flex; align-items:center; gap:4px;"><input type="radio" name="tipoCli" value="existe" checked> Cliente existente</label>
         <label style="font-size:12.5px; display:flex; align-items:center; gap:4px;"><input type="radio" name="tipoCli" value="nuevo"> Cliente nuevo</label>
@@ -392,7 +393,7 @@ async function loadAll(){
     ]);
     ESTADO={vehiculos:v.data, clientes:c.data, cotizaciones:ct.data, productos:p.data, config:cfg};
     pintarTitulo(); renderVeh(); renderCli(); renderCot(); renderPro();
-    document.getElementById('logo'+'Titulo').textContent=cfg.logo||'🔧';
+    document.getElementById('logoTitulo').textContent=cfg.logo||'🔧';
     document.getElementById('empresaTitulo').textContent=cfg.nombre||'Sistema de Cotizaciones';
   }catch(e){/*servidor apagado*/}
 }
@@ -400,6 +401,7 @@ function pintarTitulo(){}
 
 /* =============== VEHICULOS =============== */
 let busqVeh='';
+let busqCot='';
 function renderVeh(){
   const est=ESTADO; if(!est) return;
   const t=busqVeh.toLowerCase();
@@ -506,7 +508,7 @@ async function abrirFicha(id){
   const d=await api.get('/api/vehiculos/'+id);
   const v=d.vehiculo, hist=d.historial;
   let histHtml='';
-  if(!hist.length) histHtml='<div class="vac" style="border:1px dashed var(--borde); border-radius:8px; margin-top:8px;">Aún sin historial. <button class="btn btn-prim" onclick="cerrarHist();nuevaCot('+id+')">Crear primera cotización</button></div>';
+  if(!hist.length) histHtml=`<div class="vac" style="border:1px dashed var(--borde); border-radius:8px; margin-top:8px;">Aún sin historial. <button class="btn btn-prim" onclick="cerrarHist();nuevaCot(${id})">Crear primera cotización</button></div>`;
   else histHtml=hist.map(h=>`
     <div class="hist-item">
       <div class="hist-top">
@@ -606,7 +608,7 @@ function nuevaCot(vehid){
   const cmb=document.getElementById('cmbVehiculo');
   cmb.innerHTML=ESTADO.vehiculos.map(v=>`<option value="${v.id}" ${v.id===vehid?'selected':''}>${esc(v.placa||'')} · ${esc(v.marca)} ${esc(v.modelo)} · ${esc(v.cliente_nombre||'')}</option>`).join('');
   if(!ESTADO.vehiculos.length){ cmb.innerHTML='<option value="">Sin vehículos registrados</option>'; }
-  lineas=[{desc:'',cant:1,precio:0}]; renderPartidas(); renderTotal();
+  lineas=[{desc:'',folio:'',cant:1,precio:0}]; renderPartidas(); renderTotal();
   abrirModal('modalCot');
 }
 function agregarLinea(){ lineas.push({desc:'',folio:'',cant:1,precio:0}); renderPartidas(); }
