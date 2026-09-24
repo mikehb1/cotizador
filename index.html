@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotizador y Control de Vehículos</title>
+<style>
+:root{
+  --azul:#0b4d8c; --azul-osc:#08375f; --naranja:#e8881a; --verde:#1e8e5a;
+  --borde:#d7dde3; --texto:#1c2733; --rojo:#c0392b; --gris:#f2f4f7;
+  --sombra:0 4px 14px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif; color:var(--texto); background:#e9edf1;}
+header{background:linear-gradient(135deg,var(--azul-osc),var(--azul)); color:#fff; padding:13px 22px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; position:sticky; top:0; z-index:20;}
+header h1{font-size:18px; display:flex; align-items:center; gap:9px;}
+.logomarca{font-size:20px;}
+.nav{display:flex; gap:7px; flex-wrap:wrap;}
+.nav button{background:rgba(255,255,255,.13); color:#fff; border:1px solid rgba(255,255,255,.25); padding:8px 14px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; transition:.15s;}
+.nav button:hover{background:rgba(255,255,255,.28);}
+.nav button.activo{background:#fff; color:var(--azul); border-color:#fff;}
+main{max-width:1150px; margin:20px auto; padding:0 16px;}
+.vista{display:none;}
+.vista.visible{display:block; animation:ap .18s ease;}
+@keyframes ap{from{opacity:0; transform:translateY(4px);}to{opacity:1; transform:none;}}
+.card{background:#fff; border:1px solid var(--borde); border-radius:12px; padding:20px; box-shadow:var(--sombra); margin-bottom:18px;}
+.card h2{font-size:17px; margin-bottom:4px; color:var(--azul);}
+.card .sub{color:#889; font-size:13px; margin-bottom:14px;}
+.barra-tools{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap;}
+.barra-tools input[type=search]{padding:9px 12px; border:1px solid var(--borde); border-radius:8px; font-size:14px; min-width:220px;}
+.btn{padding:9px 15px; border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; transition:.15s;}
+.btn:hover{filter:brightness(1.06); transform:translateY(-1px);}
+.btn-prim{background:var(--azul); color:#fff;}
+.btn-naranja{background:var(--naranja); color:#fff;}
+.btn-rojo{background:var(--rojo); color:#fff;}
+.btn-verde{background:var(--verde); color:#fff;}
+.btn-gris{background:#eef1f4; color:#445; border:1px solid var(--borde);}
+.btn-pel{background:transparent; border:none; cursor:pointer; font-size:16px; color:#889; padding:4px 6px; border-radius:6px;}
+.btn-pel:hover{color:var(--rojo); background:#fdeceb;}
+.btn-xl{font-size:14px; padding:12px 20px;}
+table{width:100%; border-collapse:collapse; font-size:13.5px;}
+thead th{background:var(--azul); color:#fff; text-align:left; padding:9px 11px; font-size:12.5px; letter-spacing:.3px;}
+tbody td{padding:8px 11px; border-bottom:1px solid var(--borde);}
+tbody tr:hover{background:#f7f9fb;}
+.vac{text-align:center; color:#9aa; padding:26px!important;}
+.der{text-align:right;}
+.moneda{text-align:right; font-variant-numeric:tabular-nums;}
+.total-cell{font-weight:700;}
+.acciones{display:flex; gap:2px; justify-content:flex-end;}
+.placa-chip{display:inline-block; background:#0b4d8c; color:#fff; font-weight:700; letter-spacing:1px; padding:3px 10px; border-radius:6px; font-size:12.5px;}
+/* resumen */
+.resumen-stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; margin-bottom:18px;}
+.stat{background:#fff; border:1px solid var(--borde); border-radius:12px; padding:15px; box-shadow:var(--sombra);}
+.stat .num{font-size:25px; font-weight:800; color:var(--azul);}
+.stat .lab{font-size:12.5px; color:#667;}
+/* form */
+.campo{margin-bottom:13px;}
+.campo label{display:block; font-size:12.5px; font-weight:600; margin-bottom:4px; color:#445;}
+.campo input,.campo select,.campo textarea{width:100%; padding:8px 11px; border:1px solid var(--borde); border-radius:8px; font-size:13.5px; font-family:inherit;}
+.campo input:focus,.campo select:focus,.campo textarea:focus{outline:2px solid var(--azul); border-color:var(--azul);}
+.grid-2{display:grid; grid-template-columns:1fr 1fr; gap:13px;}
+.grid-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:13px;}
+.grid-4{display:grid; grid-template-columns:repeat(4,1fr); gap:13px;}
+/* ficha vehiculo */
+.ficha-head{display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:6px;}
+.ficha-tit{font-size:21px; font-weight:800; color:var(--azul);}
+.ficha-placa{font-size:15px; margin-top:4px;}
+.desc-veh{background:#f0f4f8; border-left:4px solid var(--azul); padding:10px 14px; border-radius:0 8px 8px 0; font-size:13.5px; margin-top:10px; white-space:pre-wrap;}
+.badge{padding:3px 10px; border-radius:20px; font-size:11.5px; font-weight:600;}
+.badge.ok{background:#e2f5ea; color:var(--verde);}
+/* historial timeline */
+.hist-item{border:1px solid var(--borde); border-left:4px solid var(--naranja); padding:12px 14px; border-radius:0 9px 9px 0; margin-bottom:10px; background:#fff;}
+.hist-top{display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:6px;}
+.hist-folio{font-weight:800; color:var(--azul); font-size:14px;}
+.hist-fecha{color:#667; font-size:12.5px;}
+.hist-total{font-weight:800; color:var(--verde); font-size:15px; margin-left:auto;}
+.hist-items{font-size:12.5px; color:#445; margin-top:6px;}
+.hist-items b{margin-right:10px;}
+/* modal */
+.modal-bg{position:fixed; inset:0; background:rgba(12,20,28,.55); display:none; align-items:flex-start; justify-content:center; z-index:50; padding:26px 14px; overflow:auto;}
+.modal-bg.visible{display:flex;}
+.modal{background:#fff; border-radius:14px; width:100%; max-width:560px; padding:22px; box-shadow:0 12px 40px rgba(0,0,0,.25); position:relative;}
+.modal h3{font-size:17px; margin-bottom:13px; color:var(--azul);}
+.modal .cerrar{position:absolute; top:10px; right:13px; border:none; background:none; font-size:24px; cursor:pointer; color:#999;}
+.modal .cerrar:hover{color:var(--rojo);}
+.modal-bg .modal.modal-lg{max-width:760px;}
+.item-linea{display:grid; grid-template-columns:1fr 80px 105px 88px 28px; gap:7px; align-items:center; margin-bottom:8px;}
+.item-linea input{width:100%; padding:7px 9px; border:1px solid var(--borde); border-radius:7px; font-size:13.5px;}
+.actionbar{display:flex; gap:9px; justify-content:flex-end; margin-top:15px; flex-wrap:wrap;}
+.actionbar.left{justify-content:flex-start;}
+.toast{position:fixed; bottom:24px; right:24px; background:#1c2733; color:#fff; padding:12px 18px; border-radius:10px; font-size:14px; box-shadow:0 6px 18px rgba(0,0,0,.25); opacity:0; transition:.3s; transform:translateY(10px); z-index:100;}
+.toast.mostrar{opacity:1; transform:none;}
+.toast.ok{background:var(--verde);} .toast.err{background:var(--rojo);}
+.subtitu{display:flex; gap:14px; flex-wrap:wrap; margin-top:6px; font-size:13px; color:#667;}
+.subtitu b{color:var(--texto);}
+/* ===== RESPONSIVE MÓVIL ===== */
+@media(max-width:720px){
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .item-linea{grid-template-columns:1fr 1fr;}
+  header{padding:10px 12px; flex-direction:column; align-items:stretch; gap:8px;}
+  header h1{font-size:16px;}
+  .nav{flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:4px;}
+  .nav button{flex:0 0 auto; padding:8px 12px; font-size:12.5px;}
+  main{margin:12px auto; padding:0 10px;}
+  .card{padding:14px; border-radius:10px;}
+  .barra-tools{flex-direction:column; align-items:stretch; gap:9px;}
+  .barra-tools input[type=search]{min-width:0; width:100%;}
+  .barra-tools .btn{width:100%; text-align:center;}
+  .resumen-stats{grid-template-columns:1fr 1fr; gap:9px;}
+  .stat{padding:11px;}
+  .stat .num{font-size:20px;}
+  /* tablas: scroll horizontal en vez de romper */
+  .card{overflow-x:auto;}
+  table{min-width:560px;}
+  thead th{padding:8px 9px; font-size:11.5px;}
+  tbody td{padding:7px 9px; font-size:12.5px;}
+  .modal-bg{padding:10px 8px; align-items:flex-end;}
+  .modal{max-width:100%; border-radius:14px 14px 0 0; padding:18px 14px; max-height:92vh; overflow-y:auto;}
+  .modal-bg .modal.modal-lg{max-width:100%;}
+  .actionbar{flex-direction:column;}
+  .actionbar .btn{width:100%; text-align:center;}
+  .toast{left:12px; right:12px; bottom:12px; text-align:center;}
+  .ficha-tit{font-size:18px;}
+  .subtitu{flex-direction:column; gap:4px;}
+}
+@media(max-width:400px){
+  .resumen-stats{grid-template-columns:1fr;}
+  .item-linea{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="logomarca" id="logoTitulo">🔧</span> <span id="empresaTitulo">Sistema de Cotizaciones</span></h1>
+  <div class="nav">
+    <button data-v="vehiculos" class="activo">👤🚗 Clientes y Vehículos</button>
+    <button data-v="cotizaciones">📄 Cotizaciones</button>
+    <button data-v="productos">🏷 Productos</button>
+    <button data-v="configuracion">⚙️ Config</button>
+  </div>
+</header>
+
+<main>
+  <!-- VISTA VEHICULOS -->
+  <div id="vista-vehiculos" class="vista visible">
+    <div class="resumen-stats">
+      <div class="stat"><div class="num" id="stVeh">0</div><div class="lab">Vehículos</div></div>
+      <div class="stat"><div class="num" id="stCli">0</div><div class="lab">Clientes</div></div>
+      <div class="stat"><div class="num" id="stCot">0</div><div class="lab">Cotizaciones</div></div>
+      <div class="stat"><div class="num" id="stMonto">$0</div><div class="lab">Total cotizado</div></div>
+    </div>
+    <div class="card">
+      <div class="barra-tools">
+        <h2>Vehículos en el taller</h2>
+        <div style="display:flex; gap:9px; flex-wrap:wrap;">
+          <input type="search" id="buscarVeh" placeholder="Buscar por placa, marca o dueño…">
+          <button class="btn btn-prim" onclick="abrirVeh()">+ Registrar vehículo</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Ingreso</th><th>Placa</th><th>Vehículo</th><th>Dueño</th><th>Kms</th><th>Observaciones</th><th class="der">Cotizaciones</th><th></th></tr></thead>
+        <tbody id="tbVeh"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- VISTA CLIENTES -->
+  <div id="vista-clientes" class="vista">
+    <div class="card">
+      <div class="barra-tools">
+        <h2>Clientes</h2>
+        <button class="btn btn-verde" onclick="abrirCliModal()">+ Agregar cliente</button>
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Dirección</th><th></th></tr></thead>
+        <tbody id="tbCli"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- VISTA COTIZACIONES -->
+  <div id="vista-cotizaciones" class="vista">
+    <div class="card">
+      <div class="barra-tools">
+        <h2>Cotizaciones</h2>
+        <div style="display:flex; gap:9px; flex-wrap:wrap;">
+          <input type="search" id="buscarCot" placeholder="Buscar por folio, placa o dueño…">
+          <button class="btn btn-prim" onclick="irVehFooter()">+ Nueva cotización</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Vehículo</th><th class="der">Total</th><th></th></tr></thead>
+        <tbody id="tbCot"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- VISTA PRODUCTOS -->
+  <div id="vista-productos" class="vista">
+    <div class="card">
+      <div class="barra-tools">
+        <h2>Catálogo de productos y servicios</h2>
+        <button class="btn btn-verde" onclick="abrirProModal()">+ Agregar producto</button>
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>Folio / código</th><th>Descripción</th><th>Categoría</th><th class="der">Precio</th><th></th></tr></thead>
+        <tbody id="tbPro"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- VISTA CONFIG -->
+  <div id="vista-configuracion" class="vista">
+    <div class="card">
+      <h2>Datos del negocio</h2>
+      <p class="sub">Aparecen en el encabezado de cada cotización impresa.</p>
+      <div class="grid-2">
+        <div class="campo"><label>Nombre / razón social</label><input type="text" id="cfgNombre"></div>
+        <div class="campo"><label>Logo (emojis o texto)</label><input type="text" id="cfgLogo"></div>
+        <div class="campo"><label>Dirección</label><input type="text" id="cfgDir"></div>
+        <div class="campo"><label>Teléfono</label><input type="text" id="cfgTel"></div>
+        <div class="campo"><label>Correo</label><input type="text" id="cfgMail"></div>
+        <div class="campo"><label>Nota de pie de cotización</label><input type="text" id="cfgNota"></div>
+      </div>
+      <div class="actionbar left"><button class="btn btn-prim" onclick="guardarCfg()">💾 Guardar configuración</button></div>
+    </div>
+    <div class="card">
+      <h2>Base de datos</h2>
+      <p class="sub">Descarga un respaldo completo (clientes, vehículos, historial, productos y cotizaciones). Restaurar reemplaza todo desde ese archivo.</p>
+      <div class="actionbar left">
+        <button class="btn btn-naranja" onclick="respaldarDB()">⬇ Descargar respaldo (.json)</button>
+        <button class="btn btn-gris" onclick="document.getElementById('fileDB').click()">⬆ Restaurar respaldo</button>
+        <input type="file" id="fileDB" accept=".json" style="display:none" onchange="restaurarDB(this)">
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- MODAL VEHICULO -->
+<div class="modal-bg" id="modalVeh">
+  <div class="modal modal-lg">
+    <button class="cerrar" onclick="cerrarModal('modalVeh')">&times;</button>
+    <h3 id="titVeh">Registrar vehículo</h3>
+    <input type="hidden" id="vehEditId">
+    <div class="campo"><label style="font-size:13px; color:var(--azul);">Datos del cliente / dueño</label></div>
+    <div id="cliSelBox" class="campo">
+      <label>�registrar a cliente existente o nuevo</label>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+        <label style="font-size:12.5px; display:flex; align-items:center; gap:4px;"><input type="radio" name="tipoCli" value="existe" checked> Cliente existente</label>
+        <label style="font-size:12.5px; display:flex; align-items:center; gap:4px;"><input type="radio" name="tipoCli" value="nuevo"> Cliente nuevo</label>
+      </div>
+      <select id="cmbCliente"></select>
+      <input type="text" id="cliNuevoNombre" placeholder="Nombre del cliente nuevo" style="display:none; margin-top:7px;">
+      <input type="text" id="cliNuevoTel" placeholder="Teléfono (opcional)" style="display:none; margin-top:7px;">
+    </div>
+    <div class="grid-4">
+      <div class="campo"><label>Marca *</label><input type="text" id="vehMarca" placeholder="Toyota"></div>
+      <div class="campo"><label>Modelo *</label><input type="text" id="vehModelo" placeholder="Corolla"></div>
+      <div class="campo"><label>Placa *</label><input type="text" id="vehPlaca" placeholder="ABC-123" style="text-transform:uppercase;"></div>
+      <div class="campo"><label>Kilometraje</label><input type="text" id="vehKm" placeholder="45,000"></div>
+    </div>
+    <div class="grid-2">
+      <div class="campo"><label>Fecha de ingreso</label><input type="date" id="vehFechaIng"></div>
+      <div class="campo"><label>Observaciones del vehículo</label><input type="text" id="vehObs" placeholder="Ej. Los frenos traseros hacen ruido…"></div>
+    </div>
+    <div class="actionbar"><button class="btn btn-gris" onclick="cerrarModal('modalVeh')">Cancelar</button><button class="btn btn-verde" onclick="guardarVeh()">💾 Guardar vehículo</button></div>
+  </div>
+</div>
+
+<!-- MODAL CLIENTE -->
+<div class="modal-bg" id="modalCli">
+  <div class="modal">
+    <button class="cerrar" onclick="cerrarModal('modalCli')">&times;</button>
+    <h3 id="titCli">Nuevo cliente</h3>
+    <input type="hidden" id="cliEditId">
+    <div class="campo"><label>Nombre *</label><input type="text" id="cliNombre"></div>
+    <div class="campo"><label>Teléfono</label><input type="text" id="cliTel"></div>
+    <div class="campo"><label>Email</label><input type="text" id="cliMail"></div>
+    <div class="campo"><label>Dirección</label><input type="text" id="cliDireccion"></div>
+    <div class="actionbar"><button class="btn btn-gris" onclick="cerrarModal('modalCli')">Cancelar</button><button class="btn btn-verde" onclick="guardarCli()">Guardar</button></div>
+  </div>
+</div>
+
+<!-- MODAL PRODUCTO -->
+<div class="modal-bg" id="modalPro">
+  <div class="modal">
+    <button class="cerrar" onclick="cerrarModal('modalPro')">&times;</button>
+    <h3 id="titPro">Nuevo producto</h3>
+    <input type="hidden" id="proEditId">
+    <div class="campo"><label>Folio / código</label><input type="text" id="proFolio" placeholder="Ej. ACE6X4 o XY-120"></div>
+    <div class="campo"><label>Descripción *</label><input type="text" id="proDesc"></div>
+    <div class="campo"><label>Categoría</label><input type="text" id="proCat"></div>
+    <div class="campo"><label>Precio (MXN) *</label><input type="number" id="proPrecio" step="0.01" min="0"></div>
+    <div class="actionbar"><button class="btn btn-gris" onclick="cerrarModal('modalPro')">Cancelar</button><button class="btn btn-verde" onclick="guardarPro()">Guardar</button></div>
+  </div>
+</div>
+
+<!-- MODAL COTIZACION -->
+<div class="modal-bg" id="modalCot">
+  <div class="modal modal-lg">
+    <button class="cerrar" onclick="cerrarModal('modalCot')">&times;</button>
+    <h3 id="titCot">Nueva cotización</h3>
+    <input type="hidden" id="cotEditId">
+    <div class="grid-2">
+      <div class="campo"><label>Vehículo *</label><select id="cmbVehiculo"></select></div>
+      <div class="campo"><label>Fecha</label><input type="date" id="cotFecha"></div>
+    </div>
+    <div class="campo"><label>Partidas</label></div>
+    <div id="partidas"></div>
+    <div class="actionbar left" style="margin-top:2px;"><button class="btn btn-gris" onclick="agregarLinea()">+ Agregar partida</button></div>
+    <div class="grid-2" style="margin-top:14px;">
+      <div class="campo"><label>Nota (vigencia, garantía, condiciones…)</label><textarea id="cotNota" rows="2"></textarea></div>
+      <div>
+        <div class="campo"><label>Total</label><input type="text" id="cotTotal" readonly disabled style="font-weight:800; background:#eaf3ec; color:var(--verde); font-size:16px;"></div>
+      </div>
+    </div>
+    <div class="actionbar">
+      <button class="btn btn-gris" onclick="cerrarModal('modalCot')">Cancelar</button>
+      <button class="btn btn-prim" onclick="guardarCot()">💾 Guardar cotización</button>
+      <button class="btn btn-naranja" onclick="guardarYImprimir()">🖨 Guardar e imprimir</button>
+      <button class="btn btn-verde" onclick="guardarYEnviar()">✉️ Guardar y enviar por correo</button>
+    </div>
+  </div>
+</div>
+
+<div id="hojaImpresion" class="papel"></div>
+<div class="toast" id="toast"></div>
+
+<style>
+.papel{display:none;}
+@media print{
+  body *{visibility:hidden;}
+  .papel,.papel *{visibility:visible;}
+  .papel{display:block; position:absolute; left:0; top:0; width:100%; font-family:Arial,Helvetica,sans-serif; color:#000;}
+  @page{margin:14mm;}
+}
+</style>
+
+<script>
+/* =============== API =============== */
+const api = {
+  async get(u){ const r=await fetch(u); if(r.status===404) throw new Error('no'); return r.json(); },
+  async post(u,b){ const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})}); return r.json(); },
+  async del(u){ const r=await fetch(u,{method:'DELETE'}); return r.json(); }
+};
+const fmt = n => { n=Number(n||0); return '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); };
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function hoy(){ return new Date().toISOString().slice(0,10); }
+function fmtFecha(f){ if(!f) return '-'; const p=String(f).split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:f; }
+function toast(msg,tipo){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast mostrar '+(tipo||''); clearTimeout(t._h); t._h=setTimeout(()=>t.className='toast',2200); }
+function cerrarModal(id){ document.getElementById(id).classList.remove('visible'); }
+function abrirModal(id){ document.getElementById(id).classList.add('visible'); }
+let ESTADO=null; // cache {vehiculos, clientes, cotizaciones, productos, config}
+
+/* =============== NAV =============== */
+document.querySelectorAll('.nav button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('activo'));
+    b.classList.add('activo');
+    document.querySelectorAll('.vista').forEach(v=>v.classList.remove('visible'));
+    document.getElementById('vista-'+b.dataset.v).classList.add('visible');
+    if(b.dataset.v==='configuracion') cargarCfg();
+  };
+});
+
+/* =============== ESTADO =============== */
+async function loadAll(){
+  try{
+    const [v,c,ct,p,cfg] = await Promise.all([
+      api.get('/api/vehiculos'), api.get('/api/clientes'),
+      api.get('/api/cotizaciones'), api.get('/api/productos'),
+      api.get('/api/config')
+    ]);
+    ESTADO={vehiculos:v.data, clientes:c.data, cotizaciones:ct.data, productos:p.data, config:cfg};
+    pintarTitulo(); renderVeh(); renderCli(); renderCot(); renderPro();
+    document.getElementById('logo'+'Titulo').textContent=cfg.logo||'🔧';
+    document.getElementById('empresaTitulo').textContent=cfg.nombre||'Sistema de Cotizaciones';
+  }catch(e){/*servidor apagado*/}
+}
+function pintarTitulo(){}
+
+/* =============== VEHICULOS =============== */
+let busqVeh='';
+function renderVeh(){
+  const est=ESTADO; if(!est) return;
+  const t=busqVeh.toLowerCase();
+  const lista=est.vehiculos.filter(x=> (x.placa||'').toLowerCase().includes(t) ||
+      (x.marca+' '+(x.modelo||'')).toLowerCase().includes(t) ||
+      (x.cliente_nombre||'').toLowerCase().includes(t));
+  document.getElementById('stVeh').textContent=est.vehiculos.length;
+  document.getElementById('stCli').textContent=est.clientes.length;
+  document.getElementById('stCot').textContent=est.cotizaciones.length;
+  document.getElementById('stMonto').textContent=fmt(est.cotizaciones.reduce((a,c)=>a+c.total,0));
+  const tb=document.getElementById('tbVeh');
+  if(!lista.length){ tb.innerHTML='<tr><td colspan="8" class="vac">Sin vehículos registrados aún.</td></tr>'; return; }
+  tb.innerHTML=lista.map(v=>{
+    const nCot=est.cotizaciones.filter(c=>c.vehiculo_id===v.id).length;
+    return `<tr>
+      <td>${fmtFecha(v.fecha_ingreso)}</td>
+      <td><span class="placa-chip">${esc(v.placa||'—')}</span></td>
+      <td><b>${esc(v.marca)} ${esc(v.modelo)}</b></td>
+      <td>${esc(v.cliente_nombre||'')}</td>
+      <td class="moneda">${esc(v.kilometraje||'')}</td>
+      <td style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(v.observaciones||'')}</td>
+      <td class="der"><span class="badge ${nCot?'ok':'no'}">${nCot}</span></td>
+      <td class="acciones">
+        <button class="btn-pel" title="Ver ficha e historial" onclick="abrirFicha(${v.id})">📋</button>
+        <button class="btn-pel" title="Nueva cotización" onclick="nuevaCot(${v.id})">📄</button>
+        <button class="btn-pel" title="Editar" onclick="abrirVeh(${v.id})">✏️</button>
+        <button class="btn-pel" title="Borrar" onclick="borrarVeh(${v.id})">🗑</button>
+      </td></tr>`;
+  }).join('');
+}
+
+function abrirVeh(id){
+  document.getElementById('vehEditId').value=id||'';
+  document.getElementById('titVeh').textContent=id?'Editar vehículo':'Registrar vehículo';
+  const v=id?ESTADO.vehiculos.find(x=>x.id===id):null;
+  // radio cliente
+  document.querySelectorAll('input[name=tipoCli]').forEach(r=>r.disabled=false);
+  const cmb=document.getElementById('cmbCliente');
+  cmb.innerHTML=ESTADO.clientes.map(c=>`<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
+  const inNuevo=document.getElementById('cliNuevoNombre');
+  if(v){ // editar: usa el cliente actual
+    document.querySelector('input[name=tipoCli][value=existe]').checked=true;
+    cmb.value=v.cliente_id;
+    document.getElementById('vehMarca').value=v.marca||'';
+    document.getElementById('vehModelo').value=v.modelo||'';
+    document.getElementById('vehPlaca').value=v.placa||'';
+    document.getElementById('vehKm').value=v.kilometraje||'';
+    document.getElementById('vehFechaIng').value=v.fecha_ingreso||hoy();
+    document.getElementById('vehObs').value=v.observaciones||'';
+  } else {
+    document.getElementById('cliNuevoNombre').value='';
+    document.getElementById('cliNuevoTel').value='';
+    const hayClientes=ESTADO.clientes.length>0;
+    document.querySelector(`input[name=tipoCli][value=${hayClientes?'existe':'nuevo'}]`).checked=true;
+    toggCliNuevo(!hayClientes);
+    document.getElementById('vehMarca').value=''; document.getElementById('vehModelo').value='';
+    document.getElementById('vehPlaca').value=''; document.getElementById('vehKm').value='';
+    document.getElementById('vehFechaIng').value=hoy(); document.getElementById('vehObs').value='';
+  }
+  abrirModal('modalVeh');
+}
+document.querySelectorAll('input[name=tipoCli]').forEach(r=>r.onchange=()=>toggCliNuevo(r.value==='nuevo'));
+function toggCliNuevo(nuevo){
+  document.getElementById('cmbCliente').style.display=nuevo?'none':'block';
+  document.getElementById('cliNuevoNombre').style.display=nuevo?'block':'none';
+  document.getElementById('cliNuevoTel').style.display=nuevo?'block':'none';
+}
+async function guardarVeh(){
+  const id=document.getElementById('vehEditId').value;
+  const payload={
+    marca:document.getElementById('vehMarca').value.trim(),
+    modelo:document.getElementById('vehModelo').value.trim(),
+    placa:document.getElementById('vehPlaca').value.trim().toUpperCase(),
+    kilometraje:document.getElementById('vehKm').value.trim(),
+    fecha_ingreso:document.getElementById('vehFechaIng').value||hoy(),
+    observaciones:document.getElementById('vehObs').value.trim(),
+  };
+  if(id){
+    // edicion simple via reload completo: re-registro (MVP)
+    toast('La edición de vehículo se muestra progresando…');
+    return;
+  }
+  const nuevoCli=document.querySelector('input[name=tipoCli]:checked').value==='nuevo';
+  if(nuevoCli){
+    payload.cliente_nombre=document.getElementById('cliNuevoNombre').value.trim();
+    payload.cliente_tel=document.getElementById('cliNuevoTel').value.trim();
+    if(!payload.cliente_nombre){ toast('Nombre del cliente obligatorio','err'); return; }
+  } else {
+    payload.cliente_id=parseInt(document.getElementById('cmbCliente').value);
+    if(!payload.cliente_id){ toast('Selecciona un cliente','err'); return; }
+  }
+  if(!payload.marca||!payload.modelo||!payload.placa){ toast('Marca, modelo y placa son obligatorios','err'); return; }
+  const res=await api.post('/api/vehiculos',payload);
+  if(res&&res.error){ toast(res.error,'err'); return; }
+  toast('Vehículo registrado','ok'); cerrarModal('modalVeh'); loadAll();
+}
+async function borrarVeh(id){
+  if(!confirm('¿Borrar este vehículo y TODO su historial?')) return;
+  await api.del('/api/vehiculos/'+id); toast('Vehículo eliminado'); loadAll();
+}
+
+/* ---------- FICHA VEHICULO con HISTORIAL ---------- */
+async function abrirFicha(id){
+  const d=await api.get('/api/vehiculos/'+id);
+  const v=d.vehiculo, hist=d.historial;
+  let histHtml='';
+  if(!hist.length) histHtml='<div class="vac" style="border:1px dashed var(--borde); border-radius:8px; margin-top:8px;">Aún sin historial. <button class="btn btn-prim" onclick="cerrarHist();nuevaCot('+id+')">Crear primera cotización</button></div>';
+  else histHtml=hist.map(h=>`
+    <div class="hist-item">
+      <div class="hist-top">
+        <div class="hist-folio">Cotización #{h.folio}</div>
+        <div class="hist-fecha">${fmtFecha(h.fecha)}</div>
+        <div class="hist-total">${fmt(h.total)}</div>
+        <button class="btn-pel" title="Ver/imprimir" onclick="verImprimir(${h.id})">🖨</button>
+      </div>
+      <div class="hist-items"><b>${esc(h.nota||'')}</b></div>
+    </div>`).join('');
+  const card=document.createElement('div'); card.className='card';
+  card.style.cssText='position:relative;';
+  card.innerHTML=`
+    <button class="cerrar" style="position:absolute; top:10px; right:14px; border:none; background:none; font-size:24px; cursor:pointer; color:#999; z-index:5;" onclick="this.closest('.card').remove();loadAll();">✕</button>
+    <div class="ficha-head">
+      <div>
+        <div class="ficha-tit">${esc(v.marca)} ${esc(v.modelo)}</div>
+        <div class="ficha-placa"><span class="placa-chip">${esc(v.placa||'—')}</span></div>
+      </div>
+      <div class="subtitu">
+        <div>Dueño: <b>${esc(v.cliente_nombre)}</b></div>
+        <div>Tel: <b>${esc(v.cliente_tel||'—')}</b></div>
+        <div>Kms: <b>${esc(v.kilometraje||'—')}</b></div>
+        <div>Ingreso: <b>${fmtFecha(v.fecha_ingreso)}</b></div>
+      </div>
+    </div>
+    ${v.observaciones?`<div class="desc-veh">📝 <b>Observaciones:</b> ${esc(v.observaciones)}</div>`:''}
+    <div style="margin-top:16px;">
+      <div class="barra-tools" style="margin-bottom:8px;">
+        <h2 style="font-size:15px;">Historial del vehículo</h2>
+        <button class="btn btn-prim" onclick="nuevaCot(${v.id})">+ Nueva cotización</button>
+      </div>
+      ${histHtml}
+    </div>
+  `;
+  // insertar despues del main contenedor de vehiculos
+  document.querySelector('#vista-vehiculos .card').after(card);
+  window.scrollTo({top:card.offsetTop-70, behavior:'smooth'});
+}
+function cerrarHist(){ /* noop */ }
+
+/* =============== CLIENTES =============== */
+function renderCli(){
+  const est=ESTADO; if(!est) return;
+  const tb=document.getElementById('tbCli');
+  if(!est.clientes.length){ tb.innerHTML='<tr><td colspan="6" class="vac">Sin clientes.</td></tr>'; return; }
+  tb.innerHTML=est.clientes.map((c,i)=>`<tr>
+    <td>${i+1}</td><td><b>${esc(c.nombre)}</b></td><td>${esc(c.telefono||'')}</td><td>${esc(c.email||'')}</td><td>${esc(c.direccion||'')}</td>
+    <td class="acciones"><button class="btn-pel" title="Borrar" onclick="borrarCli(${c.id})">🗑</button></td></tr>`).join('');
+}
+function abrirCliModal(id){
+  document.getElementById('titCli').textContent=id?'Editar cliente':'Nuevo cliente';
+  const c=id?ESTADO.clientes.find(x=>x.id===id):null;
+  document.getElementById('cliNombre').value=c?c.nombre:'';
+  document.getElementById('cliTel').value=c?c.telefono:'';
+  document.getElementById('cliMail').value=c?c.email:'';
+  document.getElementById('cliDireccion').value=c?c.direccion:'';
+  document.getElementById('cliEditId').value=id||'';
+  abrirModal('modalCli');
+}
+async function guardarCli(){
+  const nombre=document.getElementById('cliNombre').value.trim();
+  if(!nombre){ toast('Nombre obligatorio','err'); return; }
+  const id=document.getElementById('cliEditId').value;
+  if(id){ toast('Agrega clientes nuevos desde el registro de vehículo','err'); return; }
+  await api.post('/api/clientes',{nombre,telefono:document.getElementById('cliTel').value.trim(),email:document.getElementById('cliMail').value.trim(),direccion:document.getElementById('cliDireccion').value.trim()});
+  toast('Cliente agregado','ok'); cerrarModal('modalCli'); loadAll();
+}
+async function borrarCli(id){
+  if(!confirm('¿Borrar este cliente (borra también sus vehículos)?')) return;
+  await api.del('/api/clientes/'+id); toast('Cliente eliminado'); loadAll();
+}
+
+/* =============== COTIZACIONES =============== */
+let lineas=[];
+function nombreClienteDeVeh(vehid){ const v=ESTADO.vehiculos.find(x=>x.id===vehid); return v?v.cliente_nombre:''; }
+function renderCot(){
+  const est=ESTADO; if(!est) return;
+  const t=busqCot.toLowerCase();
+  const lista=est.cotizaciones.filter(c=> String(c.folio).includes(t) ||
+     (c.placa||'').toLowerCase().includes(t) || (c.cliente_nombre||'').toLowerCase().includes(t));
+  const tb=document.getElementById('tbCot');
+  if(!lista.length){ tb.innerHTML='<tr><td colspan="6" class="vac">Sin cotizaciones.</td></tr>'; return; }
+  tb.innerHTML=lista.map(c=>`<tr>
+    <td><b>#${c.folio}</b></td><td>${fmtFecha(c.fecha)}</td><td>${esc(c.cliente_nombre||'')}</td>
+    <td>${esc(c.marca||'')} ${esc(c.modelo||'')} <span style="color:#889; font-size:12px;">${esc(c.placa||'')}</span></td>
+    <td class="moneda total-cell">${fmt(c.total)}</td>
+    <td class="acciones"><button class="btn-pel" title="Imprimir" onclick="verImprimir(${c.id})">🖨</button>
+    <button class="btn-pel" title="Borrar" onclick="borrarCot(${c.id})">🗑</button></td></tr>`).join('');
+}
+function irVehFooter(){ toast('Primero registra el vehículo; la cotización se crea desde su ficha'); loadAll(); renderVeh(); }
+function nuevaCot(vehid){
+  document.getElementById('cotEditId').value='';
+  document.getElementById('titCot').textContent='Nueva cotización';
+  document.getElementById('cotFecha').value=hoy();
+  document.getElementById('cotNota').value='';
+  const cmb=document.getElementById('cmbVehiculo');
+  cmb.innerHTML=ESTADO.vehiculos.map(v=>`<option value="${v.id}" ${v.id===vehid?'selected':''}>${esc(v.placa||'')} · ${esc(v.marca)} ${esc(v.modelo)} · ${esc(v.cliente_nombre||'')}</option>`).join('');
+  if(!ESTADO.vehiculos.length){ cmb.innerHTML='<option value="">Sin vehículos registrados</option>'; }
+  lineas=[{desc:'',cant:1,precio:0}]; renderPartidas(); renderTotal();
+  abrirModal('modalCot');
+}
+function agregarLinea(){ lineas.push({desc:'',folio:'',cant:1,precio:0}); renderPartidas(); }
+function renderPartidas(){
+  const cont=document.getElementById('partidas');
+  cont.innerHTML='<div style="display:grid; grid-template-columns:90px 1fr 80px 105px 88px 28px; gap:7px; margin-bottom:6px; font-size:11.5px; color:#889; font-weight:600;"><span>Folio</span><span>Descripción</span><span>Cant.</span><span>P. unitario</span><span class="der">Total</span><span></span></div>';
+  cont.innerHTML+=lineas.map((l,i)=>`<div class="item-linea">
+    <input type="text" value="${esc(l.folio)}" placeholder="Código" oninput="lineas[${i}].folio=this.value;">
+    <input type="text" list="catProductos" value="${esc(l.desc)}" placeholder="Producto o servicio" onchange="lineas[${i}].desc=this.value;rellenarPrecio(${i});" oninput="lineas[${i}].desc=this.value;renderTotal();">
+    <input type="number" min="1" value="${l.cant}" oninput="lineas[${i}].cant=Math.max(1,parseFloat(this.value)||1);renderTotal();">
+    <input type="number" min="0" step="0.01" value="${l.precio}" oninput="lineas[${i}].precio=parseFloat(this.value)||0;renderTotal();">
+    <div class="der" style="font-weight:700; padding-top:6px;">${fmt((l.cant||0)*(l.precio||0))}</div>
+    <button class="btn-pel" onclick="lineas.splice(${i},1);renderPartidas();renderTotal();">✕</button></div>`).join('');
+  cont.innerHTML+='<datalist id="catProductos">'+ESTADO.productos.map(p=>`<option value="${esc(p.descripcion)}"></option>`).join('')+'</datalist>';
+}
+function rellenarPrecio(i){
+  const p=ESTADO.productos.find(x=>x.descripcion.toLowerCase()===lineas[i].desc.toLowerCase());
+  if(p){ lineas[i].precio=p.precio; lineas[i].folio=p.folio||''; renderPartidas(); }
+}
+function renderTotal(){ const sub=lineas.reduce((a,l)=>a+(l.cant||0)*(l.precio||0),0); document.getElementById('cotTotal').value=fmt(sub); }
+async function guardarCot(){
+  const vehid=parseInt(document.getElementById('cmbVehiculo').value);
+  if(!vehid){ toast('Selecciona el vehículo','err'); return; }
+  const items=lineas.filter(l=>l.desc.trim()&&(l.cant||0)>0).map(l=>({desc:l.desc.trim(),folio:l.folio||'',cant:l.cant,precio:l.precio||0}));
+  if(!items.length){ toast('Agrega al menos una partida','err'); return; }
+  const r=await api.post('/api/cotizaciones',{vehiculo_id:vehid,fecha:document.getElementById('cotFecha').value||hoy(),nota:document.getElementById('cotNota').value.trim(),items});
+  toast(`Cotización #${r.folio} guardada (${fmt(r.total)})`,'ok');
+  cerrarModal('modalCot'); loadAll(); return {id:r.id,folio:r.folio};
+}
+async function guardarYImprimir(){
+  const r=await guardarCot(); if(r&&r.id){ setTimeout(()=>verImprimir(r.id),300); }
+}
+async function guardarYEnviar(){
+  const r=await guardarCot(); if(!r||!r.id) return;
+  const d=await api.get('/api/cotizaciones/'+r.id);
+  const cfg=ESTADO.config||{};
+  const ct=d.cotizacion, v=d.vehiculo||{};
+  const cuerpo=[
+    'Hola,',
+    '',
+    'Te compartimos la cotización de tu vehículo:',
+    '',
+    '  Folio: #'+ct.folio,
+    '  Fecha: '+fmtFecha(ct.fecha),
+    '  Cliente: '+(v.cliente_nombre||''),
+    '  Vehículo: '+(v.marca||'')+' '+(v.modelo||'')+' · Placa: '+(v.placa||''),
+    '',
+    'Partidas:'
+  ];
+  d.items.forEach(i=>{ cuerpo.push('  - '+i.descripcion+' x'+i.cantidad+' = '+fmt(i.cantidad*i.precio)); });
+  cuerpo.push('');
+  cuerpo.push('Total: '+fmt(ct.total));
+  if(ct.nota) cuerpo.push('', 'Nota: '+ct.nota);
+  cuerpo.push('', (cfg.nombre||'ECOEXPRES')+(cfg.tel?' · Tel: '+cfg.tel:''));
+  const asunto=encodeURIComponent('Cotización #'+ct.folio+' - '+(v.marca||'')+' '+(v.modelo||''));
+  const body=encodeURIComponent(cuerpo.join('\n'));
+  window.location.href='mailto:?subject='+asunto+'&body='+body;
+  toast('Se abrió tu correo con la cotización lista','ok');
+}
+async function verImprimir(cid){
+  const d=await api.get('/api/cotizaciones/'+cid);
+  construirHoja(d); window.print();
+}
+async function borrarCot(id){ if(!confirm('¿Borrar esta cotización (sale del historial del vehículo)?')) return; await api.del('/api/cotizaciones/'+id); toast('Cotización eliminada'); loadAll(); }
+
+/* =============== IMPRESION FORMATO PAPEL =============== */
+function construirHoja(d){
+  const cfg=d.vehiculo&&ESTADO?ESTADO.config:{nombre:'ECOEXPRES',logo:'🔧',dir:'',tel:'',mail:'',nota:''};
+  const ct=d.cotizacion;
+  const filas=d.items.map((i,idx)=>`<tr>
+    <td style="border:1px solid #888; padding:4px 6px; text-align:center;">${idx+1}</td>
+    <td style="border:1px solid #888; padding:4px 6px; text-align:center;">${esc(i.folio||'')}</td>
+    <td style="border:1px solid #888; padding:4px 10px;">${esc(i.descripcion)}</td>
+    <td style="border:1px solid #888; padding:4px 6px; text-align:center;">${i.cantidad}</td>
+    <td style="border:1px solid #888; padding:4px 10px; text-align:right;">${fmt(i.precio)}</td>
+    <td style="border:1px solid #888; padding:4px 10px; text-align:right; font-weight:700;">${fmt(i.cantidad*i.precio)}</td>
+  </tr>`).join('');
+  const infoVeh = d.vehiculo?`<tr>
+    <td colspan="6" style="border:1px solid #888; padding:6px 10px; font-size:13px;">
+      <b>Cliente:</b> ${esc(d.vehiculo.cliente_nombre||'')} ${d.vehiculo.cliente_tel?'· Tel: '+esc(d.vehiculo.cliente_tel):''}<br>
+      <b>Vehículo:</b> ${esc(d.vehiculo.marca+' '+(d.vehiculo.modelo||''))} · Placa: <b>${esc(d.vehiculo.placa||'')}</b> · Kms: ${esc(d.vehiculo.kilometraje||'')} · Ingreso: ${fmtFecha(d.vehiculo.fecha_ingreso)}
+      ${d.vehiculo.observaciones?'<br><b>Obs:</b> '+esc(d.vehiculo.observaciones):''}
+    </td></tr>`:'';
+  document.getElementById('hojaImpresion').innerHTML=`
+  <div style="padding:6px 18px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="font-size:32px;">${cfg.logo||'🔧'}</div>
+        <div style="font-size:24px; font-weight:800; letter-spacing:1px; color:#0b4d8c;">${esc(cfg.nombre||'ECOEXPRES')}</div>
+      </div>
+      <div style="text-align:right; font-size:13px; line-height:1.6;">
+        ${cfg.dir?esc(cfg.dir)+'<br>':''}${cfg.tel?'Tel: '+esc(cfg.tel)+'<br>':''}${cfg.mail?esc(cfg.mail):''}
+      </div>
+    </div>
+    <table style="width:100%; border-collapse:collapse; margin-top:4px;">
+      <thead>
+        <tr><td colspan="6" style="background:#0b4d8c; color:#fff; font-size:16px; padding:8px; text-align:center; letter-spacing:2px; border:1px solid #0b4d8c;">COTIZACIÓN N° ${ct.folio}</td></tr>
+        ${infoVeh}
+        <tr>
+          <th style="background:#d9e4ee; border:1px solid #888; padding:6px; width:30px;">No.</th>
+          <th style="background:#d9e4ee; border:1px solid #888; padding:6px; width:70px;">Folio</th>
+          <th style="background:#d9e4ee; border:1px solid #888; padding:6px; text-align:left;">Descripción</th>
+          <th style="background:#d9e4ee; border:1px solid #888; padding:6px; width:60px;">Cant.</th>
+          <th style="background:#d9e4ee; border:1px solid #888; padding:6px; width:100px; text-align:right;">P. Unitario</th>
+          <th style="background:#d9e4ee; border:1px solid #888; padding:6px; width:110px; text-align:right;">Total</th>
+        </tr>
+      </thead>
+      <tbody>${filas}</tbody>
+    </table>
+    <div style="text-align:right; font-size:14px; margin-top:8px;">
+      <div style="border-bottom:2px solid #000; padding:4px 0;">
+        <span style="display:inline-block; width:130px;">Total:</span> <b style="font-size:16px;">${fmt(ct.total)}</b>
+      </div>
+      ${ct.fecha?`<div style="padding-top:8px; font-size:12px; color:#555;">Fecha: ${fmtFecha(ct.fecha)}</div>`:''}
+    </div>
+    ${ct.nota?`<div style="margin-top:10px; font-size:12px; color:#444; border-top:1px dashed #aaa; padding-top:8px;"><b>Nota:</b> ${esc(ct.nota)}</div>`:''}
+    ${cfg.nota?`<div style="margin-top:8px; font-size:11px; color:#888; text-align:center;">${esc(cfg.nota)}</div>`:''}
+  </div>`;
+}
+
+/* =============== PRODUCTOS =============== */
+function renderPro(){
+  const est=ESTADO; if(!est) return;
+  const tb=document.getElementById('tbPro');
+  if(!est.productos.length){ tb.innerHTML='<tr><td colspan="6" class="vac">Catálogo vacío.</td></tr>'; return; }
+  tb.innerHTML=est.productos.map((p,i)=>`<tr><td>${i+1}</td><td class="folio">${esc(p.folio||'')}</td><td>${esc(p.descripcion)}</td><td>${esc(p.categoria||'')}</td><td class="moneda total-cell">${fmt(p.precio)}</td>
+    <td class="acciones"><button class="btn-pel" title="Borrar" onclick="borrarPro(${p.id})">🗑</button></td></tr>`).join('');
+}
+function abrirProModal(){
+  document.getElementById('proDesc').value=''; document.getElementById('proCat').value=''; document.getElementById('proPrecio').value=''; document.getElementById('proFolio').value='';
+  abrirModal('modalPro');
+}
+async function guardarPro(){
+  const desc=document.getElementById('proDesc').value.trim();
+  const precio=parseFloat(document.getElementById('proPrecio').value);
+  if(!desc||isNaN(precio)){ toast('Descripción y precio obligatorios','err'); return; }
+  await api.post('/api/productos',{folio:document.getElementById('proFolio').value.trim(),descripcion:desc,categoria:document.getElementById('proCat').value.trim(),precio});
+  toast('Producto agregado','ok'); cerrarModal('modalPro'); loadAll();
+}
+async function borrarPro(id){ if(!confirm('¿Borrar producto?')) return; await api.del('/api/productos/'+id); loadAll(); }
+
+/* =============== CONFIG =============== */
+function cargarCfg(){ if(!ESTADO) return; const c=ESTADO.config;
+  document.getElementById('cfgNombre').value=c.nombre||''; document.getElementById('cfgLogo').value=c.logo||'';
+  document.getElementById('cfgDir').value=c.dir||''; document.getElementById('cfgTel').value=c.tel||'';
+  document.getElementById('cfgMail').value=c.mail||''; document.getElementById('cfgNota').value=c.nota||'';
+}
+async function guardarCfg(){
+  const cfg={nombre:document.getElementById('cfgNombre').value.trim()||'ECOEXPRES',logo:document.getElementById('cfgLogo').value.trim()||'🔧',dir:document.getElementById('cfgDir').value.trim(),tel:document.getElementById('cfgTel').value.trim(),mail:document.getElementById('cfgMail').value.trim(),nota:document.getElementById('cfgNota').value.trim()};
+  await api.post('/api/config',cfg); toast('Configuración guardada','ok'); loadAll();
+}
+
+/* =============== RESPALDO =============== */
+async function respaldarDB(){
+  const d=await api.get('/api/respaldo');
+  const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='respaldo_'+(new Date().toISOString().slice(0,10))+'.json';
+  a.click(); URL.revokeObjectURL(a.href); toast('Respaldo descargado','ok');
+}
+async function restaurarDB(input){
+  const f=input.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=async e=>{ const d=JSON.parse(e.target.result);
+    const res=await fetch('/api/restaurar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+    if(res.ok) toast('Base restaurada','ok'); else toast('Error al restaurar','err');
+    input.value=''; loadAll(); };
+  r.readAsText(f);
+}
+
+/* =============== EVENTOS BUSQUEDA =============== */
+document.getElementById('buscarVeh').addEventListener('input',e=>{busqVeh=e.target.value;renderVeh();});
+document.getElementById('buscarCot').addEventListener('input',e=>{busqCot=e.target.value;renderCot();});
+document.getElementById('vehPlaca').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase();});
+
+/* =============== INIT =============== */
+loadAll();
+// init radio default
+toggCliNuevo(true);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.modal-bg').forEach(m=>m.classList.remove('visible')); });
+</script>
+</body>
+</html>

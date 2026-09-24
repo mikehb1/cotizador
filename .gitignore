@@ -1,0 +1,16 @@
+# Base de datos local (no subir)
+cotizador.db
+*.db
+*.db-journal
+
+# Logs
+server_log.txt
+server_err.txt
+*.log
+
+# Python
+__pycache__/
+*.pyc
+
+# Temp
+_check.js
