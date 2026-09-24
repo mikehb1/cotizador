@@ -10,10 +10,19 @@ La base de datos se guarda automaticamente en cotizador.db
 import sqlite3, json, os, sys, webbrowser, threading, urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-BASE = os.path.dirname(os.path.abspath(__file__))
-DB   = os.path.join(BASE, "cotizador.db")
-HTML = os.path.join(BASE, "index.html")
-LOGO = os.path.join(BASE, "logo.png")
+# Cuando corre empaquetado como .exe (PyInstaller), los archivos de datos
+# (index.html, logo.png) se descomprimen en sys._MEIPASS, pero la base de
+# datos debe vivir JUNTO al ejecutable para persistir los datos del usuario.
+if getattr(sys, 'frozen', False):
+    DIR_APP  = os.path.dirname(os.path.abspath(sys.executable))   # carpeta del .exe
+    DIR_DATO = getattr(sys, '_MEIPASS', DIR_APP)                   # carpeta temporal interna
+else:
+    DIR_APP  = os.path.dirname(os.path.abspath(__file__))
+    DIR_DATO = DIR_APP
+
+DB   = os.path.join(DIR_APP, "cotizador.db")   # la BD vive junto al .exe (persiste)
+HTML = os.path.join(DIR_DATO, "index.html")    # dentro del paquete
+LOGO = os.path.join(DIR_DATO, "logo.png")
 PUERTO = int(os.environ.get("PORT", "8080"))
 HOST = "0.0.0.0" if "PORT" in os.environ else "127.0.0.1"
 CLOUD = "PORT" in os.environ
