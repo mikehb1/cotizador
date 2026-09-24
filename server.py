@@ -30,7 +30,7 @@ def init():
     CREATE TABLE IF NOT EXISTS config(
         id INTEGER PRIMARY KEY CHECK(id=1),
         nombre TEXT DEFAULT 'ECOEXPRES', logo TEXT DEFAULT '🔧',
-        dir TEXT DEFAULT '', tel TEXT DEFAULT '', mail TEXT DEFAULT '', nota TEXT DEFAULT ''
+        dir TEXT DEFAULT '29 sur, entre calle federal y caobas', tel TEXT DEFAULT '9841791749', mail TEXT DEFAULT '', nota TEXT DEFAULT ''
     );
     CREATE TABLE IF NOT EXISTS clientes(
         id INTEGER PRIMARY KEY AUTOINCREMENT,

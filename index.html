@@ -331,7 +331,7 @@ tbody tr:hover{background:#f7f9fb;}
 <div class="modal-bg" id="modalPreview">
   <div class="modal modal-lg" style="max-width:820px;">
     <button class="cerrar" onclick="cerrarModal('modalPreview')">&times;</button>
-    <h3>Vista previa de la cotización</h3>
+    <h3>Vista previa del presupuesto</h3>
     <div class="preview-wrap">
       <div id="previewHoja" class="papel-preview"></div>
     </div>
@@ -683,8 +683,12 @@ async function borrarCot(id){ if(!confirm('¿Borrar esta cotización (sale del h
 
 /* =============== IMPRESION FORMATO PAPEL =============== */
 function construirHoja(d){
-  const cfg=d.vehiculo&&ESTADO?ESTADO.config:{nombre:'ECOEXPRES',logo:'🔧',dir:'',tel:'',mail:'',nota:''};
+  const cfg=d.vehiculo&&ESTADO?ESTADO.config:{nombre:'ECOEXPRES',logo:'🔧',dir:'29 sur, entre calle federal y caobas',tel:'9841791749',mail:'',nota:''};
   const ct=d.cotizacion;
+  const IVA_RATE=0.16; // 16% IVA
+  const sub=parseFloat(ct.total)||0;
+  const iva=Math.round(sub*IVA_RATE*100)/100;
+  const tot=Math.round((sub+iva)*100)/100;
   const filas=d.items.map((i,idx)=>`<tr>
     <td style="border:1px solid #888; padding:4px 6px; text-align:center;">${idx+1}</td>
     <td style="border:1px solid #888; padding:4px 6px; text-align:center;">${esc(i.folio||'')}</td>
@@ -712,7 +716,7 @@ function construirHoja(d){
     </div>
     <table style="width:100%; border-collapse:collapse; margin-top:4px;">
       <thead>
-        <tr><td colspan="6" style="background:#0b4d8c; color:#fff; font-size:16px; padding:8px; text-align:center; letter-spacing:2px; border:1px solid #0b4d8c;">COTIZACIÓN N° ${ct.folio}</td></tr>
+        <tr><td colspan="6" style="background:#0b4d8c; color:#fff; font-size:16px; padding:8px; text-align:center; letter-spacing:2px; border:1px solid #0b4d8c;">PRESUPUESTO N° ${ct.folio}</td></tr>
         ${infoVeh}
         <tr>
           <th style="background:#d9e4ee; border:1px solid #888; padding:6px; width:30px;">No.</th>
@@ -726,8 +730,14 @@ function construirHoja(d){
       <tbody>${filas}</tbody>
     </table>
     <div style="text-align:right; font-size:14px; margin-top:8px;">
-      <div style="border-bottom:2px solid #000; padding:4px 0;">
-        <span style="display:inline-block; width:130px;">Total:</span> <b style="font-size:16px;">${fmt(ct.total)}</b>
+      <div style="padding:2px 0;">
+        <span style="display:inline-block; width:130px;">Subtotal:</span> <span>${fmt(sub)}</span>
+      </div>
+      <div style="padding:2px 0;">
+        <span style="display:inline-block; width:130px;">IVA (16%):</span> <span>${fmt(iva)}</span>
+      </div>
+      <div style="border-top:1px solid #000; border-bottom:2px solid #000; padding:4px 0; margin-top:2px;">
+        <span style="display:inline-block; width:130px;">Total:</span> <b style="font-size:16px;">${fmt(tot)}</b>
       </div>
       ${ct.fecha?`<div style="padding-top:8px; font-size:12px; color:#555;">Fecha: ${fmtFecha(ct.fecha)}</div>`:''}
     </div>
