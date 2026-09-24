@@ -1,0 +1,2 @@
+# El sistema usa solo la librería estándar de Python (sin dependencias externas).
+# Este archivo existe para que Render detecte correctamente el runtime Python.

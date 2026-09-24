@@ -13,7 +13,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 BASE = os.path.dirname(os.path.abspath(__file__))
 DB   = os.path.join(BASE, "cotizador.db")
 HTML = os.path.join(BASE, "index.html")
-PUERTO = 8080
+PUERTO = int(os.environ.get("PORT", "8080"))
+HOST = "0.0.0.0" if "PORT" in os.environ else "127.0.0.1"
+CLOUD = "PORT" in os.environ
 NUM = lambda c, d=0: (c if c is not None else d)
 
 def db():
@@ -315,17 +317,18 @@ class H(BaseHTTPRequestHandler):
 def main():
     init()
     try:
-        srv = ThreadingHTTPServer(('127.0.0.1', PUERTO), H)
+        srv = ThreadingHTTPServer((HOST, PUERTO), H)
     except OSError:
         print("El puerto {} esta ocupado. ;asegurate que no este abierto ya el programa o revisa otro proceso.".format(PUERTO))
         sys.exit(1)
     print("="*52)
     print("  SISTEMA DE COTIZACIONES Y CONTROL DE VEHICULOS")
     print("  Base de datos: cotizador.db")
-    print("  Servidor:     http://localhost:{}".format(PUERTO))
+    print("  Servidor:     http://localhost:{0}".format(PUERTO))
     print("  Detén con:    Ctrl + C")
     print("="*52)
-    threading.Timer(0.8, lambda: webbrowser.open("http://localhost:{}".format(PUERTO))).start()
+    if not CLOUD:
+        threading.Timer(0.8, lambda: webbrowser.open("http://localhost:{0}".format(PUERTO))).start()
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
