@@ -325,10 +325,28 @@ tbody tr:hover{background:#f7f9fb;}
 </div>
 
 <div id="hojaImpresion" class="papel"></div>
+
+<!-- MODAL PREVIEW HOJA -->
+<div class="modal-bg" id="modalPreview">
+  <div class="modal modal-lg" style="max-width:820px;">
+    <button class="cerrar" onclick="cerrarModal('modalPreview')">&times;</button>
+    <h3>Vista previa de la cotización</h3>
+    <div class="preview-wrap">
+      <div id="previewHoja" class="papel-preview"></div>
+    </div>
+    <div class="actionbar">
+      <button class="btn btn-gris" onclick="cerrarModal('modalPreview')">Cerrar</button>
+      <button class="btn btn-naranja" onclick="imprimirPreview()">🖨 Imprimir</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <style>
 .papel{display:none;}
+/* preview en pantalla: la hoja se ve como papel blanco */
+.preview-wrap{background:#e3e7ec; border:1px solid var(--borde); border-radius:10px; padding:18px; max-height:62vh; overflow:auto;}
+.papel-preview{background:#fff; color:#000; font-family:Arial,Helvetica,sans-serif; box-shadow:0 4px 18px rgba(0,0,0,.18); padding:6px 18px; max-width:760px; margin:0 auto;}
 @media print{
   body *{visibility:hidden;}
   .papel,.papel *{visibility:visible;}
@@ -650,7 +668,14 @@ async function guardarYEnviar(){
 }
 async function verImprimir(cid){
   const d=await api.get('/api/cotizaciones/'+cid);
-  construirHoja(d); window.print();
+  construirHoja(d);
+  // llenar el preview en pantalla con la misma hoja
+  document.getElementById('previewHoja').innerHTML=document.getElementById('hojaImpresion').innerHTML;
+  abrirModal('modalPreview');
+}
+function imprimirPreview(){
+  cerrarModal('modalPreview');
+  setTimeout(()=>window.print(),250);
 }
 async function borrarCot(id){ if(!confirm('¿Borrar esta cotización (sale del historial del vehículo)?')) return; await api.del('/api/cotizaciones/'+id); toast('Cotización eliminada'); loadAll(); }
 
