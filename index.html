@@ -133,7 +133,7 @@ tbody tr:hover{background:#f7f9fb;}
 <body>
 
 <header>
-  <h1><span class="logomarca" id="logoTitulo">🔧</span> <span id="empresaTitulo">Sistema de Cotizaciones</span></h1>
+  <h1><img src="/logo.png" alt="Logo" style="height:30px; width:auto; vertical-align:middle;"> <span id="empresaTitulo">Sistema de Cotizaciones</span></h1>
   <div class="nav">
     <button data-v="vehiculos" class="activo">👤🚗 Clientes y Vehículos</button>
     <button data-v="cotizaciones">📄 Cotizaciones</button>
@@ -393,7 +393,6 @@ async function loadAll(){
     ]);
     ESTADO={vehiculos:v.data, clientes:c.data, cotizaciones:ct.data, productos:p.data, config:cfg};
     pintarTitulo(); renderVeh(); renderCli(); renderCot(); renderPro();
-    document.getElementById('logoTitulo').textContent=cfg.logo||'🔧';
     document.getElementById('empresaTitulo').textContent=cfg.nombre||'Sistema de Cotizaciones';
   }catch(e){/*servidor apagado*/}
 }
@@ -707,7 +706,7 @@ function construirHoja(d){
   <div style="padding:6px 18px;">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
       <div style="display:flex; align-items:center; gap:10px;">
-        <div style="font-size:32px;">${cfg.logo||'🔧'}</div>
+        <img src="/logo.png" alt="Logo" style="height:52px; width:auto; display:block;">
         <div style="font-size:24px; font-weight:800; letter-spacing:1px; color:#0b4d8c;">${esc(cfg.nombre||'ECOEXPRES')}</div>
       </div>
       <div style="text-align:right; font-size:13px; line-height:1.6;">

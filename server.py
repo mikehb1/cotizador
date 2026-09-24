@@ -13,6 +13,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 BASE = os.path.dirname(os.path.abspath(__file__))
 DB   = os.path.join(BASE, "cotizador.db")
 HTML = os.path.join(BASE, "index.html")
+LOGO = os.path.join(BASE, "logo.png")
 PUERTO = int(os.environ.get("PORT", "8080"))
 HOST = "0.0.0.0" if "PORT" in os.environ else "127.0.0.1"
 CLOUD = "PORT" in os.environ
@@ -193,6 +194,18 @@ class H(BaseHTTPRequestHandler):
                 con=db(); c=con.execute("SELECT * FROM config WHERE id=1").fetchone() or {}
                 con.close()
                 self._send(dict(c))
+
+            elif p == '/logo.png':
+                try:
+                    with open(LOGO,'rb') as f: contenido=f.read()
+                except FileNotFoundError:
+                    contenido=b''
+                if not contenido:
+                    self._send({'error':'no logo'},404); return
+                self.send_response(200)
+                self.send_header('Content-Type','image/png')
+                self.send_header('Content-Length',str(len(contenido)))
+                self.end_headers(); self.wfile.write(contenido); return
 
             elif p == '/api/respaldo':
                 con=db()
